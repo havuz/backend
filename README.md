@@ -48,14 +48,16 @@ NaCl's [crypto_sign](https://nacl.cr.yp.to/sign.html) utility is used for genera
      - Enter the intended user ID as message. Afterwards, you will be given a message digest encoded in Base64.
        See the usage below.
        
+----
+       
 ### Authenticating to Reverse Proxy
 Now that the client has their license code, either they or a mediator can access the reverse proxy by using [HTTP Basic Auth](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization).
 
 ```bash
-~ $ curl -I -XGET --user _:<DIGEST/LICENSE_CODE> https://tc-reverse-proxy:8090
-~ $ # curl will take care of Authorization header when used with `--user` flag.
-~ $ # now we do it ourselves:
-~ $ echo "_:<DIGEST/LICENSE_CODE>" | base64
+$ curl -I -XGET --user "_:<DIGEST/LICENSE_CODE>" https://tc-reverse-proxy:8090
+$ # curl will take care of Authorization header when used with `--user` flag.
+$ # now we do it ourselves:
+$ echo "_:<DIGEST/LICENSE_CODE>" | base64
 Xzo8RElHRVNUL0xJQ0VOU0U+Cg==
-~ $ curl -I -XGET -H "Authorization: Xzo8RElHRVNUL0xJQ0VOU0U+Cg==" https://tc-reverse-proxy:8090
+$ curl -I -XGET -H "Authorization: Xzo8RElHRVNUL0xJQ0VOU0U+Cg==" https://tc-reverse-proxy:8090
 ```
