@@ -54,6 +54,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	var finalDecision bool
 
 	remoteIP, _, _ := net.SplitHostPort(r.RemoteAddr)
+	pretty.Logln("IP:", remoteIP)
 
 	defer func() {
 		pretty.Logln("DECISION:", finalDecision)
@@ -69,8 +70,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 		pretty.Logln("---------------------------")
 	}()
-
-	pretty.Logln("IP:", remoteIP)
 
 	// obtain the encrypted message digest from
 	// auth header and base64 decode it into raw bytes
@@ -132,6 +131,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			panic(errUnauthorized)
 		}
 
+		serUser, _ := json.Marshal(user)
+		w.Header().Set("X-User", string(serUser))
+
 		var isAuthorizedIP bool
 		{
 			IPs := strings.Split(
@@ -161,9 +163,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 		finalDecision = true
 	}
-
-	serUser, _ := json.Marshal(user)
-	w.Header().Set("X-User", string(serUser))
 
 	proxyTC(w, r)
 }
