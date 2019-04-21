@@ -13,27 +13,11 @@ import (
 	"time"
 
 	"github.com/gocarina/gocsv"
+	"github.com/havuz/types"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/kr/pretty"
 	"golang.org/x/crypto/nacl/sign"
 )
-
-// User is a structured member extracted
-// from sheet.
-type User struct {
-	ID string `csv:"UID"`
-
-	Status,
-	StatusReason string
-
-	AllowedIPs      string `csv:"IPs"`
-	SimultaneityCap int    `csv:"Slots"`
-	Bandwidth       int
-
-	CreatedAt,
-	UpdatedAt,
-	ExpiredAt string
-}
 
 var (
 	pubKey [32]byte
@@ -104,7 +88,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	// use UID to match a user in sheet
 	// and validate them
-	var user *User
+	var user *types.User
 	{
 		resp, err := http.Get(sheetURL)
 		if err != nil {
@@ -112,7 +96,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer resp.Body.Close()
 
-		var allUsers []*User
+		var allUsers []*types.User
 		if err := gocsv.Unmarshal(resp.Body, &allUsers); err != nil {
 			panic(err)
 		}
@@ -168,7 +152,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func proxyTC(w http.ResponseWriter, r *http.Request) {
-	var hopByHop = []string{
+	var hopByHop = [...]string{
 		"CF-Ray", "Expect-CT", "Set-Cookie", "Via",
 	}
 
@@ -188,9 +172,16 @@ func proxyTC(w http.ResponseWriter, r *http.Request) {
 
 	proxy := httputil.NewSingleHostReverseProxy(u)
 	proxy.ModifyResponse = func(resp *http.Response) error {
+		if resp.StatusCode == http.StatusOK {
+			// instructing client to store a cache for 2 minutes
+			// and avoid doing roundtrips during this period
+			resp.Header.Set("Cache-Control", "private, max-age=120")
+		}
+
 		for _, key := range hopByHop {
 			resp.Header.Del(key)
 		}
+
 		return nil
 	}
 
