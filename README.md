@@ -1,4 +1,4 @@
-## Havuz TC Reverse Proxy
+## Havuz TC Reverse Proxy [![Codacy Badge](https://api.codacy.com/project/badge/Grade/6c8f37ee6d1b4e23982b13be8568c94c)](https://www.codacy.com/app/0xbkt/backend?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=havuz/backend&amp;utm_campaign=Badge_Grade)
 
 An app that verifies Havuz users' license tokens and
 reverse proxies requests to [Vekilio's Tunnel Collector](https://github.com/Vekilio/tunnel-collector).
