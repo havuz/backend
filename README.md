@@ -24,7 +24,7 @@ reverse proxies requests to [Vekilio's Tunnel Collector](https://github.com/Veki
 // User-Pass may be omitted. Only relative root dir ("/") will be hit.
 // Example: https://usern:passw@collector.example.com
 //          https://collector.another.com/another-path
-"TC_URL": ""
+"TC_URL": "",
 
 // The TCP port to listen on. Default is 8090, as given below.
 "PORT": "8090"
