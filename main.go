@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -34,8 +35,22 @@ func init() {
 	copy(pubKey[:], pv)
 }
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+func main() {
+	ADDR := ":8090"
+	if portFromEnv := os.Getenv("PORT"); portFromEnv != "" {
+		ADDR = ":"+portFromEnv
+	}
+
+	http.Handle("/", http.HandlerFunc(handler))
+
+	log.Printf("Reverse Proxy is listening at: %+q\n", ADDR)
+	log.Fatal(http.ListenAndServe(ADDR, nil))
+}
+
+func handler(w http.ResponseWriter, r *http.Request) {
 	var finalDecision bool
+
+	pretty.Logln("")
 
 	remoteIP, _, _ := net.SplitHostPort(r.RemoteAddr)
 	pretty.Logln("IP:", remoteIP)
@@ -51,8 +66,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 			http.Error(w, httpErr.Error(), httpErr.Code)
 		}
-
-		pretty.Logln("---------------------------")
 	}()
 
 	// obtain the encrypted message digest from
@@ -153,7 +166,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 func proxyTC(w http.ResponseWriter, r *http.Request) {
 	var hopByHop = [...]string{
-		"CF-Ray", "Expect-CT", "Set-Cookie", "Via",
+		"CF-Ray", "Expect-CT", "Set-Cookie", "Via", "Server",
 	}
 
 	u, err := url.Parse(tcURL)
@@ -172,12 +185,6 @@ func proxyTC(w http.ResponseWriter, r *http.Request) {
 
 	proxy := httputil.NewSingleHostReverseProxy(u)
 	proxy.ModifyResponse = func(resp *http.Response) error {
-		if resp.StatusCode == http.StatusOK {
-			// instructing client to store a cache for 2 minutes
-			// and avoid doing roundtrips during this period
-			resp.Header.Set("Cache-Control", "private, max-age=120")
-		}
-
 		for _, key := range hopByHop {
 			resp.Header.Del(key)
 		}
