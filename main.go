@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -26,10 +27,14 @@ var (
 	sheetURL = os.Getenv("SHEET_URL")
 	tcURL    = os.Getenv("TC_URL")
 
+	isOnCloudfoundry = flag.Bool("cloudfoundry", false, "indicates that the runtime is deployed on cloudfoundry")
+
 	errUnauthorized = &httpError{http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized)}
 )
 
 func init() {
+	flag.Parse()
+
 	strPubKey := os.Getenv("PUB_KEY")
 	pv, _ := base64.StdEncoding.DecodeString(strPubKey)
 	copy(pubKey[:], pv)
@@ -38,7 +43,7 @@ func init() {
 func main() {
 	ADDR := ":8090"
 	if portFromEnv := os.Getenv("PORT"); portFromEnv != "" {
-		ADDR = ":"+portFromEnv
+		ADDR = ":" + portFromEnv
 	}
 
 	http.Handle("/", http.HandlerFunc(handler))
@@ -52,7 +57,21 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	pretty.Logln("")
 
-	remoteIP, _, _ := net.SplitHostPort(r.RemoteAddr)
+	var remoteIP string
+	{
+		xForwardedFor := strings.Split(
+			strings.ReplaceAll(r.Header.Get("X-Forwarded-For"), " ", ""),
+			",",
+		)
+
+		switch {
+		case *isOnCloudfoundry:
+			remoteIP = xForwardedFor[len(xForwardedFor)-2]
+		default:
+			remoteIP, _, _ = net.SplitHostPort(r.RemoteAddr)
+		}
+	}
+
 	pretty.Logln("IP:", remoteIP)
 
 	defer func() {
